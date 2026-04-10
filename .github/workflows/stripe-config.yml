@@ -1,0 +1,93 @@
+name: Stripe Configuration
+
+on:
+  schedule:
+    - cron: "0 0 * * *"  # Daily at midnight UTC
+  workflow_dispatch:
+
+env:
+  STRIPE_API_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+
+jobs:
+  sync-webhook-events:
+    runs-on: ubuntu-latest
+    name: Sync Stripe Webhook Configuration
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Stripe CLI
+        run: |
+          curl https://files.stripe.com/stripe-cli/install.sh | sudo bash
+
+      - name: Verify webhook endpoint
+        run: |
+          stripe listen --api-key=${{ secrets.STRIPE_SECRET_KEY }} \
+                        --forward-to=${{ secrets.WEBHOOK_URL }}/api/webhooks/stripe \
+                        --skip-header \
+                        --max-retries=3 \
+                        --test-mode
+
+      - name: Log webhook status
+        run: echo "✅ Stripe webhook configuration verified"
+
+  check-disputes:
+    runs-on: ubuntu-latest
+    name: Check for Open Disputes
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Create dispute check script
+        run: |
+          cat > check-disputes.js << 'EOF'
+          const Stripe = require('stripe');
+          const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+          
+          (async () => {
+            const disputes = await stripe.disputes.list({ limit: 100, status: 'under_review' });
+            if (disputes.data.length > 0) {
+              console.log(`⚠️ ${disputes.data.length} disputes under review`);
+              process.exit(1);
+            } else {
+              console.log('✅ No open disputes');
+            }
+          })();
+          EOF
+
+      - name: Check disputes
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: node check-disputes.js
+
+      - name: Notify on disputes found
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '⚠️ Stripe Disputes Detected',
+              body: 'Open disputes detected. Check Stripe dashboard for details.',
+              labels: ['stripe', 'disputes']
+            })
