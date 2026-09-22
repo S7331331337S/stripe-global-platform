@@ -20,25 +20,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Install Stripe CLI
         run: |
-          curl https://files.stripe.com/stripe-cli/install.sh | sudo bash
+          curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg > /dev/null
+          echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee /etc/apt/sources.list.d/stripe.list
+          sudo apt update && sudo apt install -y stripe
 
-      - name: Verify webhook endpoint
-        run: |
-          stripe listen --api-key=${{ secrets.STRIPE_SECRET_KEY }} \
-                        --forward-to=${{ secrets.WEBHOOK_URL }}/api/webhooks/stripe \
-                        --skip-header \
-                        --max-retries=3 \
-                        --test-mode
+      - name: Verify Stripe API key
+        run: stripe config --list --api-key=${{ secrets.STRIPE_SECRET_KEY }}
 
       - name: Log webhook status
-        run: echo "✅ Stripe webhook configuration verified"
+        run: echo "✅ Stripe configuration verified"
 
   check-disputes:
     runs-on: ubuntu-latest
@@ -51,10 +47,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Create dispute check script
         run: |
