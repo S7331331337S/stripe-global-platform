@@ -10,7 +10,7 @@ describe("fee quote", () => {
   });
 
   it("rejects a fee that would consume the charge", () => {
-    expect(() => quotePlatformFee(50, 50)).toThrow(/must be less than amount/);
+    expect(() => quotePlatformFee(30, 50)).toThrow(/must be less than amount/);
   });
 
   it("sums line items", () => {

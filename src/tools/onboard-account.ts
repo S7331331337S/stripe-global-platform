@@ -10,7 +10,7 @@ export const OnboardAccountInputSchema = z.object({
   isTenantZero: z.boolean().default(false),
 });
 
-export type OnboardAccountInput = z.infer<typeof OnboardAccountInputSchema>;
+export type OnboardAccountInput = z.input<typeof OnboardAccountInputSchema>;
 
 export interface OnboardAccountResult {
   orgId: string;

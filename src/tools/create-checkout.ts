@@ -14,7 +14,7 @@ export const CreateCheckoutInputSchema = z.object({
   cancelUrl: z.string().url().optional(),
 });
 
-export type CreateCheckoutToolInput = z.infer<typeof CreateCheckoutInputSchema>;
+export type CreateCheckoutToolInput = z.input<typeof CreateCheckoutInputSchema>;
 
 export interface CreateCheckoutResult {
   checkoutId: string;

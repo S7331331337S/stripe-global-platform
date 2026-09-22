@@ -1,4 +1,3 @@
-import { integrationIdentifier } from "@/domain/ids";
 import { getStripe } from "@/stripe/client";
 import type {
   CheckoutPort,
@@ -31,7 +30,6 @@ export const stripeCheckout: CheckoutPort = {
         },
       },
       metadata: input.metadata,
-      integration_identifier: integrationIdentifier("mstrmnd_dest"),
     });
 
     return {
