@@ -1,3 +1,4 @@
+import type { JevPort } from "@/jev/port";
 import type { Ledger } from "@/ledger/store";
 import type { CheckoutPort } from "@/stripe/ports";
 import { createCheckout } from "@/tools/create-checkout";
@@ -16,7 +17,7 @@ export async function runCheckoutAgent(
     mandateId: string;
     items: LineItem[];
   },
-  deps: { ledger: Ledger; checkout: CheckoutPort }
+  deps: { ledger: Ledger; checkout: CheckoutPort; jev: JevPort }
 ): Promise<AgentLoopResult<CheckoutGoal>> {
   return runAgentLoop({
     name: "checkout",

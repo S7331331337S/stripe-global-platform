@@ -17,6 +17,7 @@ You are the Phase 1 programming-agent orchestrator.
 - Webhook idempotency key is Stripe `event.id`.
 - No `any`. No live keys. No Issuing/Treasury.
 - Keep tools behind ports so tests do not call Stripe.
+- Decisions go through `JevPort` (`choice` / `noul` / `score`). Tests use `MockJev`. Do not construct `TypeSafeClient` at import time.
 
 ## File owners
 

@@ -1,3 +1,4 @@
+import type { JevPort } from "@/jev/port";
 import type { Ledger } from "@/ledger/store";
 import type { StripeLikeEvent } from "@/stripe/webhooks";
 import { reconcileEvent } from "@/tools/reconcile-event";
@@ -9,7 +10,7 @@ export interface ReconcileGoal {
 
 export async function runReconcileAgent(
   events: StripeLikeEvent[],
-  deps: { ledger: Ledger }
+  deps: { ledger: Ledger; jev: JevPort }
 ): Promise<AgentLoopResult<ReconcileGoal>> {
   let cursor = 0;
 
@@ -30,7 +31,7 @@ export async function runReconcileAgent(
         throw new Error("reconcile has no event but inbox is not empty");
       }
       cursor += 1;
-      const output = reconcileEvent({ event: nextEvent }, deps);
+      const output = await reconcileEvent({ event: nextEvent }, deps);
       return {
         tool: "reconcile_event",
         input: { eventId: nextEvent.id, type: nextEvent.type },

@@ -6,8 +6,8 @@ export default function Phase1StatusPage() {
       </p>
       <h1>Stripe intelligence platform</h1>
       <p>
-        Ledger, Connect destination charges, and programming-agent loops. G&apos;s Stock is
-        tenant zero — not this app.
+        Ledger, Connect destination charges, TypeSafe Jev decisions, and
+        programming-agent loops. G&apos;s Stock is tenant zero — not this app.
       </p>
       <ul>
         <li>GET /api/health</li>

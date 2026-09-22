@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import { createJevFromEnv } from "@/jev/client";
 import { getLedger } from "@/ledger/memory";
 import { stripeCheckout } from "@/stripe/checkout";
 import { stripeConnect } from "@/stripe/connect";
@@ -34,6 +35,7 @@ export default async function handler(
     const data = await runTool(name, req.body?.input ?? {}, {
       ledger: getLedger(),
       ports: { connect: stripeConnect, checkout: stripeCheckout },
+      jev: createJevFromEnv(),
     });
     res.status(200).json({ success: true, data });
   } catch (error) {

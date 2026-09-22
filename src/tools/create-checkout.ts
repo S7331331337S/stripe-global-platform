@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { quotePlatformFee, sumLineItems } from "@/domain/fees";
 import { LineItemSchema } from "@/domain/types";
+import type { JevPort } from "@/jev/port";
+import { decideCheckout, type CheckoutPolicyState } from "@/jev/policy";
 import type { Ledger } from "@/ledger/store";
 import type { CheckoutPort } from "@/stripe/ports";
 
@@ -25,7 +27,7 @@ export interface CreateCheckoutResult {
 
 export async function createCheckout(
   input: CreateCheckoutToolInput,
-  deps: { ledger: Ledger; checkout: CheckoutPort }
+  deps: { ledger: Ledger; checkout: CheckoutPort; jev: JevPort }
 ): Promise<CreateCheckoutResult> {
   const parsed = CreateCheckoutInputSchema.parse(input);
   const org = deps.ledger.getOrganization(parsed.orgId);
@@ -63,6 +65,42 @@ export async function createCheckout(
 
   const fee = quotePlatformFee(amountCents, org.platformFeeBps);
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+
+  const state: CheckoutPolicyState = {
+    tool: "create_checkout",
+    orgId: org.id,
+    actorId: actor.id,
+    mandateId: mandate.id,
+    purpose: mandate.purpose,
+    amountCents,
+    mandateMaxCents: mandate.maxAmountCents,
+    currency: parsed.currency,
+    recipientTransferStatus: org.recipientTransferStatus,
+    platformFeeBps: org.platformFeeBps,
+    applicationFeeCents: fee.applicationFeeCents,
+    itemCount: parsed.items.length,
+  };
+
+  const verdict = await decideCheckout(deps.jev, state);
+  deps.ledger.appendJournal({
+    orgId: org.id,
+    actorId: actor.id,
+    mandateId: mandate.id,
+    kind: "policy.decided",
+    amountCents,
+    currency: parsed.currency.toUpperCase(),
+    details: {
+      tool: "create_checkout",
+      model: verdict.model,
+      decision: verdict.decision,
+      reason: verdict.reason,
+      answers: verdict.answers,
+      state,
+    },
+  });
+  if (verdict.decision !== "proceed") {
+    throw new Error(verdict.reason);
+  }
 
   const session = await deps.checkout.createDestinationCheckout({
     connectedAccountId: org.stripeAccountId,

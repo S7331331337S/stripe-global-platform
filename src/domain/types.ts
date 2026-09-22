@@ -47,6 +47,7 @@ export const JournalKindSchema = z.enum([
   "account.updated",
   "dispute.created",
   "onboarding.initiated",
+  "policy.decided",
 ]);
 
 export type JournalKind = z.infer<typeof JournalKindSchema>;

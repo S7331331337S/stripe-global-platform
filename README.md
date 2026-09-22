@@ -1,6 +1,6 @@
 # Stripe Intelligence Platform
 
-Phase 1 of an intelligence layer on Stripe: a ledger of record, Connect destination charges (Accounts v2), and programming agents that run tool loops until a goal is true.
+Phase 1 of an intelligence layer on Stripe: a ledger of record, Connect destination charges (Accounts v2), TypeSafe Jev decisions, and programming agents that run tool loops until a goal is true.
 
 This is **not** a live global payments product. G's Stock lives in `stripe-payment-web-app` and is tenant zero — a merchant node, not this repo.
 
@@ -10,8 +10,9 @@ Read **[PHASE1_SCOPE.md](./PHASE1_SCOPE.md)** for the locked configuration and a
 
 - Onboard a recipient connected account (`dashboard: express`, platform owns fees and losses)
 - Create a destination Checkout Session with `application_fee_amount`
+- Ask Jev (`@typesafe-ai/sdk`, model `jev-latest`) for typed `choice` / `noul` / `score` answers before those tools run
 - Ingest Stripe webhooks into an idempotent inbox keyed by `event.id`
-- Project events into an append-only journal
+- Project events into an append-only journal, including `policy.decided`
 - Run `onboard`, `checkout`, and `reconcile` agents until their goals complete
 
 ## Commands

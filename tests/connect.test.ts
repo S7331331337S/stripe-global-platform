@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MemoryLedger } from "@/ledger/memory";
+import { mockJev } from "@/jev/mock";
 import { mockStripePorts } from "@/stripe/mock";
 import { onboardAccount } from "@/tools/onboard-account";
 import { createCheckout } from "@/tools/create-checkout";
@@ -16,7 +17,7 @@ describe("Connect + destination checkout", () => {
         country: "US",
         isTenantZero: true,
       },
-      { ledger, connect: ports.connect }
+      { ledger, connect: ports.connect, jev: mockJev() }
     );
 
     expect(result.stripeAccountId.startsWith("acct_")).toBe(true);
@@ -39,7 +40,7 @@ describe("Connect + destination checkout", () => {
         email: "ops@gs-stock.test",
         country: "US",
       },
-      { ledger, connect: ports.connect }
+      { ledger, connect: ports.connect, jev: mockJev() }
     );
 
     const actor = ledger.getActor(onboarded.actorId);
@@ -59,7 +60,7 @@ describe("Connect + destination checkout", () => {
         mandateId: mandate.id,
         items: [{ name: "BPC157 10mg", amountCents: 2000, quantity: 1 }],
       },
-      { ledger, checkout: ports.checkout }
+      { ledger, checkout: ports.checkout, jev: mockJev() }
     );
 
     const created = ports.checkout.created[0];

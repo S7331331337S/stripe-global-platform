@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { MemoryLedger } from "@/ledger/memory";
+import { mockJev } from "@/jev/mock";
 import { mockStripePorts } from "@/stripe/mock";
 import { runOnboardAgent } from "@/agents/onboard";
 import { runCheckoutAgent } from "@/agents/checkout";
@@ -10,11 +11,12 @@ describe("programming agents", () => {
   it("runs onboard, checkout, and reconcile until complete", async () => {
     const ledger = new MemoryLedger();
     const ports = mockStripePorts();
+    const jev = mockJev();
     ports.connect.nextStatus = "active";
 
     const onboard = await runOnboardAgent(
       { name: "G's Stock", email: "ops@gs-stock.test", country: "US" },
-      { ledger, connect: ports.connect }
+      { ledger, connect: ports.connect, jev }
     );
     expect(onboard.complete).toBe(true);
     if (!onboard.goal) throw new Error("missing onboard goal");
@@ -39,7 +41,7 @@ describe("programming agents", () => {
         mandateId: mandate.id,
         items: [{ name: "BPC157 10mg", amountCents: 2000, quantity: 1 }],
       },
-      { ledger, checkout: ports.checkout }
+      { ledger, checkout: ports.checkout, jev }
     );
     expect(checkout.complete).toBe(true);
 
@@ -59,7 +61,7 @@ describe("programming agents", () => {
           },
         },
       ],
-      { ledger }
+      { ledger, jev }
     );
 
     expect(reconcile.complete).toBe(true);

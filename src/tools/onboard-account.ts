@@ -1,4 +1,6 @@
 import { z } from "zod";
+import type { JevPort } from "@/jev/port";
+import { decideOnboard, type OnboardPolicyState } from "@/jev/policy";
 import type { Ledger } from "@/ledger/store";
 import type { ConnectPort } from "@/stripe/ports";
 
@@ -22,12 +24,36 @@ export interface OnboardAccountResult {
 
 export async function onboardAccount(
   input: OnboardAccountInput,
-  deps: { ledger: Ledger; connect: ConnectPort }
+  deps: { ledger: Ledger; connect: ConnectPort; jev: JevPort }
 ): Promise<OnboardAccountResult> {
   const parsed = OnboardAccountInputSchema.parse(input);
   const country = parsed.country.toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) {
     throw new Error("country must be a 2-letter ISO code");
+  }
+
+  const state: OnboardPolicyState = {
+    tool: "onboard_account",
+    name: parsed.name,
+    email: parsed.email,
+    country,
+    isTenantZero: parsed.isTenantZero,
+  };
+
+  const verdict = await decideOnboard(deps.jev, state);
+  if (verdict.decision !== "proceed") {
+    deps.ledger.appendJournal({
+      kind: "policy.decided",
+      details: {
+        tool: "onboard_account",
+        model: verdict.model,
+        decision: verdict.decision,
+        reason: verdict.reason,
+        answers: verdict.answers,
+        state,
+      },
+    });
+    throw new Error(verdict.reason);
   }
 
   const org = deps.ledger.createOrganization({
@@ -55,6 +81,21 @@ export async function onboardAccount(
     stripeAccountId: account.id,
     onboardingUrl: link.url,
     recipientTransferStatus: account.recipientTransferStatus,
+  });
+
+  deps.ledger.appendJournal({
+    orgId: org.id,
+    actorId: actor.id,
+    kind: "policy.decided",
+    stripeObjectId: account.id,
+    details: {
+      tool: "onboard_account",
+      model: verdict.model,
+      decision: verdict.decision,
+      reason: verdict.reason,
+      answers: verdict.answers,
+      state,
+    },
   });
 
   deps.ledger.appendJournal({

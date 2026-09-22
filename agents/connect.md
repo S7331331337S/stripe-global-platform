@@ -8,6 +8,7 @@ Own `src/stripe/**` (except webhook projection), `src/tools/onboard-account.ts`,
 - Capability read: `configuration.recipient.capabilities.stripe_balance.stripe_transfers.status`
 - Checkout Session with `payment_intent_data.transfer_data.destination` and `application_fee_amount`
 - Fee quote = platform bps + `round(amount * 0.029) + 30`
+- Ask Jev before creating an account or Checkout Session; journal `policy.decided`
 
 ## Stop when
 

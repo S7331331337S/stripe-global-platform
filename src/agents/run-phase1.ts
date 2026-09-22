@@ -1,4 +1,5 @@
 import { MemoryLedger } from "@/ledger/memory";
+import { mockJev } from "@/jev/mock";
 import { mockStripePorts } from "@/stripe/mock";
 import { runOnboardAgent } from "@/agents/onboard";
 import { runCheckoutAgent } from "@/agents/checkout";
@@ -8,6 +9,7 @@ import type { StripeLikeEvent } from "@/stripe/webhooks";
 export async function runPhase1Loop(): Promise<void> {
   const ledger = new MemoryLedger();
   const ports = mockStripePorts();
+  const jev = mockJev();
   ports.connect.nextStatus = "active";
 
   const onboard = await runOnboardAgent(
@@ -17,7 +19,7 @@ export async function runPhase1Loop(): Promise<void> {
       country: "US",
       isTenantZero: true,
     },
-    { ledger, connect: ports.connect }
+    { ledger, connect: ports.connect, jev }
   );
 
   if (!onboard.complete || !onboard.goal) {
@@ -49,7 +51,7 @@ export async function runPhase1Loop(): Promise<void> {
       mandateId: mandate.id,
       items: [{ name: "BPC157 10mg", amountCents: 2000, quantity: 1 }],
     },
-    { ledger, checkout: ports.checkout }
+    { ledger, checkout: ports.checkout, jev }
   );
 
   if (!checkout.complete || !checkout.goal) {
@@ -88,7 +90,7 @@ export async function runPhase1Loop(): Promise<void> {
     },
   ];
 
-  const reconcile = await runReconcileAgent(events, { ledger });
+  const reconcile = await runReconcileAgent(events, { ledger, jev });
   if (!reconcile.complete || !reconcile.goal) {
     throw new Error(`reconcile agent failed: ${reconcile.error ?? "unknown"}`);
   }

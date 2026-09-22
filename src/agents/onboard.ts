@@ -1,3 +1,4 @@
+import type { JevPort } from "@/jev/port";
 import type { Ledger } from "@/ledger/store";
 import type { ConnectPort } from "@/stripe/ports";
 import { onboardAccount } from "@/tools/onboard-account";
@@ -11,7 +12,7 @@ export interface OnboardGoal {
 
 export async function runOnboardAgent(
   input: { name: string; email: string; country: string; isTenantZero?: boolean },
-  deps: { ledger: Ledger; connect: ConnectPort }
+  deps: { ledger: Ledger; connect: ConnectPort; jev: JevPort }
 ): Promise<AgentLoopResult<OnboardGoal>> {
   return runAgentLoop({
     name: "onboard",
